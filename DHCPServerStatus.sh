@@ -1,9 +1,11 @@
 #!/bin/bash
 
 #	Check OS X DHCP Status
-#	by Jedda Wignall
+#	modified by Jonathan Cohen
+#	original script by Jedda Wignall
 #	http://jedda.me
 
+#	v1.1 - 21 Nov 2016
 #	v1.0 - 7 Dec 2012
 #	Initial release.
 
