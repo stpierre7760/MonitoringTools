@@ -16,6 +16,7 @@
 #	Required Arguments:
 #	-w		Warning threshold for active clients. Script throws WARNING if number of active clients is greater than or equals the supplied number.
 #	-c		Critical threshold for active clients. Script throws CRITICAL if number of active clients is greater than or equals the supplied number.
+#	-t 		The target /24 subnet in the following notation "x.x.x" quotes are required.
 
 #	Example:
 #	./check_osx_swupdate.sh -w 120 -c 180
@@ -28,6 +29,8 @@
 #	10.6 Server
 #	10.7 Server
 #	10.8 Server
+#	10.11 Server
+
 
 if [[ $EUID -ne 0 ]]; then
    printf "ERROR - This script must be run as root.\n"
@@ -75,11 +78,18 @@ startingAddress=`serveradmin settings dhcp | grep net_range_start | grep $target
 #endingAddress=`serveradmin settings dhcp | grep net_range_end | grep $dhcpSubnet | awk '{print substr($3, 10, length($3) - 10)}'`
 endingAddress=`serveradmin settings dhcp | grep net_range_end | grep $targetSubnet | awk '{print substr($3, 10, length($3) - 10)}'`
 
+#This determines the total number of addresses that is available in the target scope.
 dhcpLeases=$(($endingAddress-$startingAddress))
 #echo $dhcpLeases
 
-#dhcpActiveClients=`serveradmin fullstatus dhcp | grep "ipAddress = $dhcpSubnet" | wc -l | awk {'print $1'}`
-dhcpActiveClients=`serveradmin fullstatus dhcp | grep "$targetSubnet" | wc -l | awk {'print $1'}`
+
+# THIS IS WHERE WE BREAK DOWN - THIS LINE WILL RETURN RESULTS FOR EXPIRED LEASES AND THEREFORE OVER_REPORTS USED LEASES
+#dhcpActiveClients=`serveradmin fullstatus dhcp | grep "$targetSubnet" | wc -l | awk {'print $1'}`
+
+# grep -B will allow for the display of lines previous to the result and -A for after.
+#First we exclude results that have negative time, then count the results that have positive time remaining.
+dhcpActiveClients=`serveradmin fullstatus dhcp | grep -A 2 "10.0.15" | grep -v "timeLeft = -" | grep -B 2 "timeLeft = " | grep "10.0.15" | wc -l | awk {'print $1'}`
+
 
 
 if [ "$dhcpActiveClients" -ge "$critThresh" ]; then
