@@ -88,6 +88,8 @@ dhcpLeases=$(($endingAddress-$startingAddress))
 
 # grep -B will allow for the display of lines previous to the result and -A for after.
 #First we exclude results that have negative time, then count the results that have positive time remaining.
+
+#Need to readd variables to this line
 dhcpActiveClients=`serveradmin fullstatus dhcp | grep -A 2 "10.0.15" | grep -v "timeLeft = -" | grep -B 2 "timeLeft = " | grep "10.0.15" | wc -l | awk {'print $1'}`
 
 
