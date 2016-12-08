@@ -6,7 +6,7 @@
 #	http://jedda.me
 
 #	v1.1 - 21 Nov 2016
-#	v1.0 - 7 Dec 2012
+#	v1.0 - 7 Dec 2012 (Jedda)
 #	Initial release.
 
 #	Script that uses serveradmin to check that the OS X Server DHCP service is listed as running.
@@ -29,7 +29,7 @@
 #	10.6 Server
 #	10.7 Server
 #	10.8 Server
-#	10.11 Server
+#	10.11.6 Server (Jonathan)
 
 
 if [[ $EUID -ne 0 ]]; then
@@ -68,32 +68,26 @@ if [ "$dhcpStatus" != "RUNNING" ]; then
 fi
 
 #Echo Target for Checking
-echo $targetSubnet
+#echo $targetSubnet
 
-#echo $dhcpSubnet
-
-#startingAddress=`serveradmin settings dhcp | grep net_range_start | grep $dhcpSubnet | awk '{print substr($3, 10, length($3) - 10)}'`
+#This identifies the starting IP Address of the target DHCP scope.
 startingAddress=`serveradmin settings dhcp | grep net_range_start | grep $targetSubnet | awk '{print substr($3, 10, length($3) - 10)}'`
 
-#endingAddress=`serveradmin settings dhcp | grep net_range_end | grep $dhcpSubnet | awk '{print substr($3, 10, length($3) - 10)}'`
+#This identifies the last IP Address of the target DHCP scope.
 endingAddress=`serveradmin settings dhcp | grep net_range_end | grep $targetSubnet | awk '{print substr($3, 10, length($3) - 10)}'`
 
 #This determines the total number of addresses that is available in the target scope.
 dhcpLeases=$(($endingAddress-$startingAddress))
-#echo $dhcpLeases
 
 
-# THIS IS WHERE WE BREAK DOWN - THIS LINE WILL RETURN RESULTS FOR EXPIRED LEASES AND THEREFORE OVER_REPORTS USED LEASES
-#dhcpActiveClients=`serveradmin fullstatus dhcp | grep "$targetSubnet" | wc -l | awk {'print $1'}`
-
+#Now we need to identify active DHCP leases from the information provided in `serveradmin fullstatus dhcp`.  By default, serveradmin also returns information about expired leases, we need to clear this out of the results.
 # grep -B will allow for the display of lines previous to the result and -A for after.
 #First we exclude results that have negative time, then count the results that have positive time remaining.
 
-#Need to readd variables to this line
-dhcpActiveClients=`serveradmin fullstatus dhcp | grep -A 2 "10.0.15" | grep -v "timeLeft = -" | grep -B 2 "timeLeft = " | grep "10.0.15" | wc -l | awk {'print $1'}`
+dhcpActiveClients=`serveradmin fullstatus dhcp | grep -A 2 "$targetSubnet" | grep -v "timeLeft = -" | grep -B 2 "timeLeft = " | grep "$targetSubnet" | wc -l | awk {'print $1'}`
 
 
-
+#Now we run our logic to determine if our DHCP status based on the original thresholds.
 if [ "$dhcpActiveClients" -ge "$critThresh" ]; then
 	printf "CRITICAL - $dhcpLeases leases ($dhcpActiveClients active clients) | providedLeases=$dhcpLeases; activeClients=$dhcpActiveClients;\n"
 	exit 2
