@@ -60,7 +60,7 @@ if [ "$critThresh" == "" ]; then
 fi
 
 # check that the dhcp service is running
-dhcpStatus=`serveradmin fullstatus dhcp | grep 'dhcp:state' | sed -E 's/dhcp:state.+"(.+)"/\1/'`
+dhcpStatus=`/Applications/Server.app/Contents/ServerRoot/usr/sbin/serveradmin fullstatus dhcp | grep 'dhcp:state' | sed -E 's/dhcp:state.+"(.+)"/\1/'`
 
 if [ "$dhcpStatus" != "RUNNING" ]; then
 	printf "CRITICAL - DHCP service is not running!\n"
@@ -71,10 +71,10 @@ fi
 #echo $targetSubnet
 
 #This identifies the starting IP Address of the target DHCP scope.
-startingAddress=`serveradmin settings dhcp | grep net_range_start | grep $targetSubnet | awk '{print substr($3, 10, length($3) - 10)}'`
+startingAddress=`/Applications/Server.app/Contents/ServerRoot/usr/sbin/serveradmin settings dhcp | grep net_range_start | grep $targetSubnet | awk '{print substr($3, 10, length($3) - 10)}'`
 
 #This identifies the last IP Address of the target DHCP scope.
-endingAddress=`serveradmin settings dhcp | grep net_range_end | grep $targetSubnet | awk '{print substr($3, 10, length($3) - 10)}'`
+endingAddress=`/Applications/Server.app/Contents/ServerRoot/usr/sbin/serveradmin settings dhcp | grep net_range_end | grep $targetSubnet | awk '{print substr($3, 10, length($3) - 10)}'`
 
 #This determines the total number of addresses that is available in the target scope.
 dhcpLeases=$(($endingAddress-$startingAddress))
@@ -84,7 +84,7 @@ dhcpLeases=$(($endingAddress-$startingAddress))
 # grep -B will allow for the display of lines previous to the result and -A for after.
 #First we exclude results that have negative time, then count the results that have positive time remaining.
 
-dhcpActiveClients=`serveradmin fullstatus dhcp | grep -A 2 "$targetSubnet" | grep -v "timeLeft = -" | grep -B 2 "timeLeft = " | grep "$targetSubnet" | wc -l | awk {'print $1'}`
+dhcpActiveClients=`/Applications/Server.app/Contents/ServerRoot/usr/sbin/serveradmin fullstatus dhcp | grep -A 2 "$targetSubnet" | grep -v "timeLeft = -" | grep -B 2 "timeLeft = " | grep "$targetSubnet" | wc -l | awk {'print $1'}`
 
 
 #Now we run our logic to determine if our DHCP status based on the original thresholds.
